@@ -1,12 +1,13 @@
 {
-    "version": "1.0.0",
+    "version": "2.0.0",
     "tasks": [
         {
             "label": "Build SDL2",
             "type": "shell",
             "command": "gcc",
             "args": [
-                "engine.c",
+                "engine/src/*.c",
+                "-Iengine/include",
                 "-lSDL2",
                 "-lSDL2_ttf",
                 "-o",

@@ -1,4 +1,5 @@
-#include "engine.h"
+#include "main.h"
+#include "text.h"
 #define WINDOW_WIDTH 0
 #define WINDOW_HEIGHT 0
 
@@ -23,23 +24,17 @@ int main(int argc, char** args) {
     SDL_FillRect(winSurface, &viewportRect, SDL_MapRGB(winSurface->format, 255, 255, 255));
     SDL_FillRect(winSurface, &textboxRect, SDL_MapRGB(winSurface->format, 180, 180, 180));
 
-    // Define text
-    const char* fontFile = "fonts/default.ttf";
-    int fontSize = 48;
-    TTF_Font* defaultFont = TTF_OpenFont(fontFile, fontSize);
-    const char* text = "Hello World!";
-    SDL_Color textColor = {0, 0, 0, 255};
-    // Create new surface with text on it
-    SDL_Surface* textSurface = TTF_RenderUTF8_Solid(defaultFont, text, textColor);
-    SDL_Rect textLocation = {textboxRect.x, textboxRect.y, textSurface->w, textSurface-> h};
-    // Copy creates surface to window surface
-    SDL_BlitSurface(textSurface, NULL, winSurface, &textLocation);
+    linesInit(); // from text.c
+
+    const char *newText = "Hello World!";
+    createNewLine(newText, textboxRect, winSurface); // from text.c
+    SDL_Delay(1000);
+    newText = "TEST LINE 2!!";
+    createNewLine(newText, textboxRect, winSurface); // from text.c
 
     SDL_UpdateWindowSurface(win);
 
     SDL_Delay(5000);
-    SDL_FreeSurface(textSurface);
-    TTF_CloseFont(defaultFont);
     TTF_Quit();
     SDL_DestroyWindow(win);
     SDL_Quit();
