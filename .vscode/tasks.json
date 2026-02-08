@@ -1,0 +1,21 @@
+{
+    "version": "1.0.0",
+    "tasks": [
+        {
+            "label": "Build SDL2",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "engine.c",
+                "-lSDL2",
+                "-lSDL2_ttf",
+                "-o",
+                "build/main"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
