@@ -1,0 +1,48 @@
+all lowercase
+extremely simple
+.txt or proprietary extension
+
+commands:
+var - creates a new variable but in-engine these are all set to engine_var to avoid name conflicts
+text - adds a new text line, may require ""
+bg - sets a new background, 
+map - sets new map, maps are tile based and each tile represents a background so as the player moves new backgrounds will automatically be loaded.
+spr - sets a new sprite on the background (current plan is 1 sprite allowed), is proceeded by a slot identifier slot1, slot2, slot3
+    spr delete slot# - deletes that sprite on screen
+slot# - references a spr slot. spr can be assigned a set of variables which are referenced by the slot they are in and a . (ex slot1.attack)
+cmd - creates a new text input command, may require "", doesn't care about case
+
+if
+endif
+else
+and
+or
+
+math - initially include basics like + - * / = < >
+
+
+EXAMPLE:
+map castle // Looks for a map in the map folder named castle and loads all the images into memory from the bg/castle folder
+cmd Fireball // really just a bool, is set to 1 if a textinput matches
+var fireballDmg = 5 // is created as engine_fireballDmg in the backend to avoid duplicate names
+
+if bg castle3
+    spr goblin slot1
+    text "A Goblin appears!"
+endif
+
+if cmd Fireball
+    if slot1
+        slot1.hp - fireballDmg
+    endif
+endif
+
+if slot1.hp = 0
+    spr delete slot1
+    text "Goblin defeated!"
+endif
+
+
+
+
+

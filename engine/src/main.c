@@ -2,8 +2,10 @@
 #include "text.h"
 #include <string.h>
 #include "eventsText.h"
+#include "backgrounds.h"
+#include "maps.h"
 
-#define WINDOW_WIDTH 0
+#define WINDOW_WIDTH 0 // Ignored if fullscreen is used
 #define WINDOW_HEIGHT 0
 
 void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textboxRect);
@@ -11,7 +13,8 @@ void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textbox
 int main(int argc, char** args) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     TTF_Init();
-    SDL_Window* win = NULL;
+    IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
+    SDL_Window *win = NULL;
     int window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
 
     win = SDL_CreateWindow("Text-Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
@@ -23,6 +26,7 @@ int main(int argc, char** args) {
         return 1;
     }
 
+    // Calculate screen areas
     SDL_Rect viewportRect = {};
     calcViewport(win, &viewportRect);
     SDL_Rect textboxRect = {};
@@ -35,6 +39,12 @@ int main(int argc, char** args) {
     // Text Input Init
     SDL_StartTextInput();
     char inputBuffer[MAX_INPUT_LEN] = "";
+
+    // Background Init
+    initBackground(&viewportRect);
+
+    createNewBackground(renderer, "assets/backgrounds/img.png");
+    createNewMap("assets/maps/map.txt");
 
     // Game loop
     int running = 1;
@@ -67,6 +77,7 @@ int main(int argc, char** args) {
 
     SDL_StopTextInput();
     TTF_Quit();
+    IMG_Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);
     SDL_Quit();
@@ -85,6 +96,7 @@ void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textbox
 
     renderTextbox(renderer, textboxRect);
     renderInput(renderer, textboxRect);
+    renderBackground(renderer, viewportRect);
     SDL_RenderPresent(renderer);
 }
 

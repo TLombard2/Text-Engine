@@ -9,14 +9,12 @@ void eventTextInput(char *buffer, SDL_Event event) {
     }
 }
 
-
 void eventTextBackspace(char *buffer, SDL_Event event) {
     size_t len = strlen(buffer);
     if (len > 0) {
         buffer[len - 1] = '\0';
     }
 }
-
 
 void eventTextReturn(char *buffer) {
     buffer[0] = '\0';
