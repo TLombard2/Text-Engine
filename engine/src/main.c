@@ -1,44 +1,91 @@
 #include "main.h"
 #include "text.h"
+#include <string.h>
+#include "eventsText.h"
+
 #define WINDOW_WIDTH 0
 #define WINDOW_HEIGHT 0
+
+void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textboxRect);
 
 int main(int argc, char** args) {
     SDL_Init(SDL_INIT_EVERYTHING);
     TTF_Init();
     SDL_Window* win = NULL;
-    SDL_Surface* winSurface = NULL;
     int window_flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
 
-    win = SDL_CreateWindow("Hello World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
-    
-    // Documentation says Fullscreen flag ignores w,h but the surface doesn't so it is set again here.
+    win = SDL_CreateWindow("Text-Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
     setWindowSize(win);
-   
-    winSurface = SDL_GetWindowSurface(win);
+
+    SDL_Renderer *renderer = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!renderer) {
+        printf("Renderer creation failed: %s\n", SDL_GetError());
+        return 1;
+    }
+
     SDL_Rect viewportRect = {};
     calcViewport(win, &viewportRect);
-    SDL_Rect textboxRect ={};
+    SDL_Rect textboxRect = {};
     calcTextbox(win, &textboxRect);
 
-    SDL_FillRect(winSurface, &viewportRect, SDL_MapRGB(winSurface->format, 255, 255, 255));
-    SDL_FillRect(winSurface, &textboxRect, SDL_MapRGB(winSurface->format, 180, 180, 180));
+    // Textbox Init
+    linesInit();
+    createNewLine("Hello World!", textboxRect, renderer);
 
-    linesInit(); // from text.c
+    // Text Input Init
+    SDL_StartTextInput();
+    char inputBuffer[MAX_INPUT_LEN] = "";
 
-    const char *newText = "Hello World!";
-    createNewLine(newText, textboxRect, winSurface); // from text.c
-    SDL_Delay(1000);
-    newText = "TEST LINE 2!!";
-    createNewLine(newText, textboxRect, winSurface); // from text.c
+    // Game loop
+    int running = 1;
+    SDL_Event event;
+    while (running) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT || 
+               (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
+                running = 0;
+            }
+            if (event.type == SDL_TEXTINPUT) {
+                eventTextInput(inputBuffer, event);
+                if (inputBuffer[0] != '\0') {
+                    updateInputText(inputBuffer, textboxRect, renderer);
+                }
+            }
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKSPACE) {
+                eventTextBackspace(inputBuffer, event);
+                updateInputText(inputBuffer, textboxRect, renderer);
+            }
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN && strlen(inputBuffer) > 0) {
+                    createNewLine(inputBuffer, textboxRect, renderer);
+                    eventTextReturn(inputBuffer);
+                    updateInputText(inputBuffer, textboxRect, renderer);
+            }
+        }
 
-    SDL_UpdateWindowSurface(win);
+        renderFrame(renderer, viewportRect, textboxRect); // Render every frame - GPU doesn't recall prev frames
+    }
 
-    SDL_Delay(5000);
+    SDL_StopTextInput();
     TTF_Quit();
+    SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);
     SDL_Quit();
     return 0;
+}
+
+void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textboxRect) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(renderer, &viewportRect);
+
+    SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
+    SDL_RenderFillRect(renderer, &textboxRect);
+
+    renderTextbox(renderer, textboxRect);
+    renderInput(renderer, textboxRect);
+    SDL_RenderPresent(renderer);
 }
 
 void setWindowSize(SDL_Window *win) {

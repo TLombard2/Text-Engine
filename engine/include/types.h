@@ -12,6 +12,7 @@ typedef struct text_t {
     SDL_Rect *location;
     const char *fontFile;
     SDL_Color textColor;
+    SDL_Texture *texture;
     uint8_t fontSize;
     bool used;
 } text_t;
