@@ -9,15 +9,15 @@
 void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textboxRect);
 
 int main(int argc, char** args) {
-    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     TTF_Init();
     SDL_Window* win = NULL;
-    int window_flags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
+    int window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
 
     win = SDL_CreateWindow("Text-Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
     setWindowSize(win);
 
-    SDL_Renderer *renderer = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    SDL_Renderer *renderer = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
         printf("Renderer creation failed: %s\n", SDL_GetError());
         return 1;

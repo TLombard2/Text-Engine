@@ -10,7 +10,6 @@ typedef struct text_t {
     TTF_Font *font;
     const char *textContent;
     SDL_Rect *location;
-    const char *fontFile;
     SDL_Color textColor;
     SDL_Texture *texture;
     uint8_t fontSize;

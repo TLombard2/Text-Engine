@@ -5,18 +5,22 @@
 #define MAX_LINES 8
 #define FONT_SIZE 48
 
+static TTF_Font *sharedFont = NULL;
+
 text_t lines[MAX_LINES];
 SDL_Rect lineLocation[MAX_LINES];
 
 void linesInit() {
     memset(lines, 0, sizeof lines);
     memset(lineLocation, 0, sizeof lineLocation);
+    if (!sharedFont) {
+        sharedFont = TTF_OpenFont("fonts/default.ttf", FONT_SIZE);
+    }
 }
 
 void createNewLine(const char *content, SDL_Rect rect, SDL_Renderer *renderer) {
-    // Free top line's resources as it will be deleted
+    // Free top line's texture as it will be deleted
     if (lines[MAX_LINES-1].used) {
-        if (lines[MAX_LINES-1].font)    TTF_CloseFont(lines[MAX_LINES-1].font);
         if (lines[MAX_LINES-1].texture) SDL_DestroyTexture(lines[MAX_LINES-1].texture);
     }
 
@@ -29,11 +33,10 @@ void createNewLine(const char *content, SDL_Rect rect, SDL_Renderer *renderer) {
     memset(&lines[0], 0, sizeof lines[0]);
 
     // Set new line
-    lines[0].fontFile    = "fonts/default.ttf";
     lines[0].fontSize    = FONT_SIZE;
     lines[0].textColor   = (SDL_Color){0, 0, 0, 255};
     lines[0].used        = 1;
-    lines[0].font        = TTF_OpenFont(lines[0].fontFile, lines[0].fontSize);
+    lines[0].font        = sharedFont;
     lines[0].textContent = content;
 
     // Create GPU texture from rendered text
@@ -86,7 +89,7 @@ void updateInputText(const char *content, SDL_Rect rect, SDL_Renderer *renderer)
     }
 
     if (!inputFont) {
-        inputFont = TTF_OpenFont("fonts/default.ttf", FONT_SIZE);
+        inputFont = sharedFont;
     }
 
     // If there is nothing to render return
