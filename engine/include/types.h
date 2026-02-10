@@ -21,13 +21,16 @@ typedef struct coord_t {
     uint8_t y;
 } coord_t;
 
+typedef struct player_t {
+    char *name;
+    coord_t coord;
+} player_t;
+
 typedef struct map_t {
     char *file;
     uint8_t data[64][64];
-    uint8_t sizeX;
-    uint8_t sizeY;
-    uint8_t startX;
-    uint8_t startY;
+    coord_t size;
+    coord_t start;
 } map_t;
 
 typedef struct background_t {

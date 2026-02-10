@@ -2,11 +2,12 @@
 #include "text.h"
 #include <string.h>
 #include "eventsText.h"
+#include "eventsMovement.h"
 #include "backgrounds.h"
 #include "maps.h"
 
-#define WINDOW_WIDTH 0 // Ignored if fullscreen is used
-#define WINDOW_HEIGHT 0
+#define WINDOW_WIDTH 1400// Ignored if fullscreen is used
+#define WINDOW_HEIGHT 1000
 
 void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textboxRect);
 
@@ -15,7 +16,7 @@ int main(int argc, char** args) {
     TTF_Init();
     IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
     SDL_Window *win = NULL;
-    int window_flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
+    int window_flags = 0;//SDL_WINDOW_FULLSCREEN_DESKTOP;
 
     win = SDL_CreateWindow("Text-Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, window_flags);
     setWindowSize(win);
@@ -45,16 +46,19 @@ int main(int argc, char** args) {
 
     createNewBackground(renderer, "assets/backgrounds/img.png");
     createNewMap("assets/maps/map.txt");
+    printMap();
 
     // Game loop
     int running = 1;
     SDL_Event event;
+    bool keyPressed = false;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT || 
                (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
                 running = 0;
             }
+            /// Text Events
             if (event.type == SDL_TEXTINPUT) {
                 eventTextInput(inputBuffer, event);
                 if (inputBuffer[0] != '\0') {
@@ -69,6 +73,16 @@ int main(int argc, char** args) {
                     createNewLine(inputBuffer, textboxRect, renderer);
                     eventTextReturn(inputBuffer);
                     updateInputText(inputBuffer, textboxRect, renderer);
+            }
+
+            /// Movement Events
+            if (keyPressed == false && event.type == SDL_KEYDOWN && (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_DOWN ||
+            event.key.keysym.sym == SDLK_LEFT || event.key.keysym.sym == SDLK_RIGHT)) {
+                keyPressed = true;
+                movePlayer(event);
+            }
+            if (event.type == SDL_KEYUP) {
+                keyPressed = false;
             }
         }
 

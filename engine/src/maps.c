@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "types.h"
+#include "maps.h"
 
 #define MAX_MAP_SIZE 8204 // Allows 64x64 maps and includes header data
 
 map_t map;
+player_t player;
 static char mapBuffer[MAX_MAP_SIZE];
 
 void createNewMap(char *file) {
@@ -30,39 +31,93 @@ void createNewMap(char *file) {
     SDL_RWclose(mapFile);
     mapBuffer[bytesRead] = '\0';
 
-    // Parse file into individual lines
-    char *line = strtok(mapBuffer, "\n");
+    // Parse file into individual lines using strtok_r (reentrant) so we can
+    // safely tokenize lines and tokens within lines without conflicts.
+    char *lineSave = NULL; // strtok_r state for line splitting
+    char *line = strtok_r(mapBuffer, "\n", &lineSave);
     if (!line) return;
 
     // Store file name
     map.file = file;
 
     // First line - set size data
-    sscanf(line, "%hhu %hhu", &map.sizeX, &map.sizeY); // hhu means uint8
+    sscanf(line, "%hhu %hhu", &map.size.x, &map.size.y); // hhu means uint8
 
     // Second line - set start coordinates
-    line = strtok(NULL, "\n"); // NULL moves strtok forward 1 line
+    line = strtok_r(NULL, "\n", &lineSave);
     if (!line) return;
-    sscanf(line, "%hhu %hhu", &map.startX, &map.startY);
+    sscanf(line, "%hhu %hhu", &map.start.x, &map.start.y);
+
+    // Set player location to the start
+    player.coord.x = map.start.x;
+    player.coord.y = map.start.y;
 
     // Third line - set map data
     memset(map.data, 0, sizeof(map.data)); // Clear map data
 
     // sizeY is map rows but is used here to define # of lines to iterate through the map data
-    for (int y = 0; y < map.sizeY; y++) { 
-        line = strtok(NULL, "\n"); // Get next line
+    for (int y = 0; y < map.size.y; y++) { 
+        line = strtok_r(NULL, "\n", &lineSave); // Get next line
         if (!line) break;
 
-        // Copy the line here because strtok is already in use and you can't nest strtok calls
-        char lineCopy[256];
-        strncpy(lineCopy, line, sizeof(lineCopy) - 1);
-        lineCopy[sizeof(lineCopy) - 1] = '\0'; // This guarantees a NUL Byte at the end to avoid reading past the buffer
-
         // Split row by spaces to get each tile value of the map
-        char *token = strtok(lineCopy, " ");
-        for (int x = 0; x < map.sizeX && token; x++) {
-            map.data[y][x] = (uint8_t)atoi(token); // Convert string -> int
-            token = strtok(NULL, " ");
+        char *tokenSave = NULL; // separate strtok_r state for token splitting
+        char *token = strtok_r(line, " ", &tokenSave);
+        for (int x = 0; x < map.size.x && token; x++) {
+            map.data[y][x] = (uint8_t)atoi(token);
+            token = strtok_r(NULL, " ", &tokenSave);
         }
     }
+}
+
+void printMap() {
+    printf("\n=== Map Data (size: %d x %d) ===\n", map.size.x, map.size.y);
+    for (int y = 0; y < map.size.y; y++) {
+        for (int x = 0; x < map.size.x; x++) {
+            if (x == player.coord.x && y == player.coord.y) {
+                printf(" P"); // Mark player position
+            } else {
+                printf(" %d", map.data[y][x]);
+            }
+        }
+        printf("\n");
+    }
+    printf("Player at: (%d, %d)\n", player.coord.x, player.coord.y);
+    printf("===========================\n\n");
+}
+
+int *getMovementOptions () {
+    static int options[4]; // right, left, top, bottom
+    memset(options, 0, sizeof(options));
+
+    int px = player.coord.x;
+    int py = player.coord.y;
+
+    if (px != map.size.x - 1) { // Not on right edge
+        int right = map.data[py][px + 1];
+        if (right == 1) {
+            options[0] = 1;
+        }
+    }
+    if (px != 0) { // Not on left edge
+        int left = map.data[py][px - 1];
+        if (left == 1) {
+            options[1] = 1;
+        }
+    }
+    if (py != 0) { // Not on top edge
+        int top = map.data[py - 1][px];
+        if (top == 1) {
+            options[2] = 1;
+        }
+    }
+    if (py != map.size.y - 1) { // Not on bottom edge
+        int bot = map.data[py + 1][px];
+        if (bot == 1) {
+            options[3] = 1;
+        }
+    }
+
+    printf("OPTIONS %d %d %d %d", options[0], options[1], options[2], options[3]);
+    return options;
 }
