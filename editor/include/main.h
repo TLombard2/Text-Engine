@@ -3,6 +3,17 @@
 
 #include "raylib.h"
 #include <stdbool.h>
+#include <stdlib.h>
+
+//-----------------------------------------------------------
+// Compatibility shim: TextToFloat – only needed for raylib
+// versions before 5.1 that don't declare it.
+//-----------------------------------------------------------
+#if !defined(RAYLIB_VERSION_MAJOR)
+  static inline float TextToFloat(const char *text) { return (text != NULL) ? (float)atof(text) : 0.0f; }
+#elif (RAYLIB_VERSION_MAJOR < 5) || (RAYLIB_VERSION_MAJOR == 5 && RAYLIB_VERSION_MINOR < 1)
+  static inline float TextToFloat(const char *text) { return (text != NULL) ? (float)atof(text) : 0.0f; }
+#endif
 
 //-----------------------------------------------------------
 // Constants
@@ -19,7 +30,7 @@
 #define MAX_CELL_SIZE       128
 
 //-----------------------------------------------------------
-// Global UI scale (computed once at startup from monitor DPI)
+// Global UI scale (recomputed each frame from window size)
 //-----------------------------------------------------------
 extern float uiScale;
 

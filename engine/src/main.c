@@ -11,6 +11,23 @@
 
 void renderFrame(SDL_Renderer *renderer, SDL_Rect viewportRect, SDL_Rect textboxRect);
 
+/* ── Resolve asset paths relative to the executable ── */
+static char basePath[512] = "";
+
+const char *assetPath(const char *relative)
+{
+    static char buf[1024];
+    if (basePath[0] == '\0') {
+        char *bp = SDL_GetBasePath();
+        if (bp) {
+            strncpy(basePath, bp, sizeof(basePath) - 1);
+            SDL_free(bp);
+        }
+    }
+    snprintf(buf, sizeof(buf), "%s%s", basePath, relative);
+    return buf;
+}
+
 int main(int argc, char** args) {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     TTF_Init();
@@ -44,9 +61,9 @@ int main(int argc, char** args) {
     // Background Init
     initBackground(&viewportRect);
 
-    createNewBackground(renderer, "assets/backgrounds/img.png");
-    createNewMap("assets/maps/map.txt");
-    printMap();
+    createNewMap((char *)assetPath("assets/maps/map.txt"));
+    createNewBackground(renderer, assetPath("assets/backgrounds/map.png"));
+    printMap(); // Debug
 
     // Game loop
     int running = 1;

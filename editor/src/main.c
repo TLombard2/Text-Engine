@@ -13,10 +13,12 @@
 
 #include "raylib.h"
 
+#include "main.h"
+
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#include "main.h"
+#include "filedialog.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -67,42 +69,6 @@ static const char *baseFileName(const char *path)
     const char *p = strrchr(path, '/');
     if (!p) p = strrchr(path, '\\');
     return p ? p + 1 : path;
-}
-
-/* Open a native file dialog via zenity.
- * mode: 0 = open file, 1 = save file
- * filter: zenity filter string e.g. "*.txt" or "*.png *.jpg"
- * title:  dialog title
- * Returns true if user picked a file (result written into outPath). */
-static bool nativeFileDialog(char *outPath, int outSize, int mode,
-                             const char *title, const char *filter)
-{
-    char cmd[1024];
-    if (mode == 1)
-        snprintf(cmd, sizeof(cmd),
-                 "zenity --file-selection --save --confirm-overwrite "
-                 "--title=\"%s\" --file-filter=\"%s\" 2>/dev/null", title, filter);
-    else
-        snprintf(cmd, sizeof(cmd),
-                 "zenity --file-selection "
-                 "--title=\"%s\" --file-filter=\"%s\" 2>/dev/null", title, filter);
-
-    FILE *fp = popen(cmd, "r");
-    if (!fp) return false;
-
-    char buf[MAX_PATH_LEN] = {0};
-    if (!fgets(buf, sizeof(buf), fp)) { pclose(fp); return false; }
-    int status = pclose(fp);
-    if (status != 0) return false;
-
-    /* Strip trailing newline */
-    size_t len = strlen(buf);
-    while (len > 0 && (buf[len-1] == '\n' || buf[len-1] == '\r')) buf[--len] = '\0';
-    if (len == 0) return false;
-
-    strncpy(outPath, buf, outSize - 1);
-    outPath[outSize - 1] = '\0';
-    return true;
 }
 
 /* Draw one sprite-sheet tile into an arbitrary destination rect. */
@@ -242,6 +208,7 @@ static bool loadSpriteSheet(const char *path, int tileW, int tileH)
     map.spriteTileW = tileW;
     map.spriteTileH = tileH;
 
+
     return true;
 }
 
@@ -271,7 +238,7 @@ static void drawToolbar(int screenW)
         int btnW = menuW - S(4);
         if (GuiButton((Rectangle){S(6), tbH + S(2),             btnW, itemH}, "  New Map")) {
             activeDialog = DIALOG_NEW_MAP;
-            dialogMapW = 10;  dialogMapH = 10;
+            dialogMapW = 4;  dialogMapH = 4;
             editDialogW = editDialogH = false;
             fileMenuOpen = false;
         }
@@ -294,6 +261,7 @@ static void drawToolbar(int screenW)
             fileMenuOpen = false;
             char path[MAX_PATH_LEN] = {0};
             if (nativeFileDialog(path, MAX_PATH_LEN, 0, "Load Sprite", "Images | *.png *.jpg *.bmp")) {
+                ShowCursor();
                 strncpy(pendingSpritePath, path, MAX_PATH_LEN - 1);
                 dialogTileW = 16;  dialogTileH = 16;
                 editTileW = editTileH = false;
@@ -323,32 +291,6 @@ static void drawToolbar(int screenW)
         DrawText("Brush: eraser", infoX, S(8), fontSize, (Color){200, 120, 120, 255});
     }
 
-    /* ── Window control buttons (right side) ── */
-    int btnSize = tbH - S(6);
-    int btnY    = S(3);
-    int gap     = S(4);
-
-    /* Close (X) */
-    Rectangle closeBtn = {screenW - btnSize - gap, btnY, btnSize, btnSize};
-    DrawRectangleRec(closeBtn, (Color){180, 40, 40, 255});
-    if (GuiButton(closeBtn, "X")) {
-        if (sprite.loaded) UnloadTexture(sprite.texture);
-        CloseWindow();
-        exit(0);
-    }
-
-    /* Maximize / Restore */
-    Rectangle maxBtn = {closeBtn.x - btnSize - gap, btnY, btnSize, btnSize};
-    bool isFullscreen = IsWindowFullscreen();
-    if (GuiButton(maxBtn, isFullscreen ? "#" : "[]")) {
-        ToggleFullscreen();
-    }
-
-    /* Minimize */
-    Rectangle minBtn = {maxBtn.x - btnSize - gap, btnY, btnSize, btnSize};
-    if (GuiButton(minBtn, "_")) {
-        MinimizeWindow();
-    }
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -682,41 +624,47 @@ static void handleFileMenuDismiss(void)
  * ────────────────────────────────────────────────────────────── */
 int main(void)
 {
-    /* ── Window: resizable, starts in real fullscreen ── */
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(800, 600, "Map Editor");
+    /* ── Window: resizable, starts maximized (not fullscreen).       ──
+     * Avoids WSL/X11 issues where GetMonitorWidth/Height return wrong  
+     * values and ToggleFullscreen creates a mismatched framebuffer.    */
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_MAXIMIZED);
+    InitWindow(1920, 1080, "Map Editor");
 
-    int monitor = GetCurrentMonitor();
-    int monW    = GetMonitorWidth(monitor);
-    int monH    = GetMonitorHeight(monitor);
+    /* Initial UI scale from current window (recomputed each frame) */
+    uiScale = (float)GetScreenHeight() / 1080.0f;
+    if (uiScale < 0.5f) uiScale = 0.5f;
 
-    /* Compute UI scale: treat 1080p as 1.0× */
-    uiScale = (float)monH / 1080.0f;
-    if (uiScale < 1.0f) uiScale = 1.0f;
-
-    /* Apply scale to runtime sizes */
-    cellSize         = S(DEFAULT_CELL_SIZE);
+    cellSize          = S(DEFAULT_CELL_SIZE);
     spriteDisplaySize = S(48);
-
-    SetWindowSize(monW, monH);
-    ToggleFullscreen();
 
     SetTargetFPS(60);
     SetExitKey(0);   /* ESC is used for closing menus, not quitting */
 
     GuiSetStyle(DEFAULT, TEXT_SIZE, S(14));
 
+    /* Ensure cursor is visible (WSL/X11 can hide it on init) */
+    ShowCursor();
+
     /* ── Main loop ── */
     while (!WindowShouldClose()) {
         int screenW = GetScreenWidth();
         int screenH = GetScreenHeight();
+
+        /* ── Recompute UI scale each frame so resizing / WSL works ── */
+        float newScale = (float)screenH / 1080.0f;
+        if (newScale < 0.5f) newScale = 0.5f;
+        if (fabsf(newScale - uiScale) > 0.001f) {
+            uiScale = newScale;
+            cellSize          = S(DEFAULT_CELL_SIZE);
+            spriteDisplaySize = S(48);
+            GuiSetStyle(DEFAULT, TEXT_SIZE, S(14));
+        }
 
         /* ── Global keys ── */
         if (IsKeyPressed(KEY_ESCAPE)) {
             if      (activeDialog != DIALOG_NONE) activeDialog = DIALOG_NONE;
             else if (fileMenuOpen)                fileMenuOpen = false;
         }
-        if (IsKeyPressed(KEY_F11)) ToggleFullscreen();
 
         /* Dismiss file menu on outside click */
         if (activeDialog == DIALOG_NONE) handleFileMenuDismiss();

@@ -42,6 +42,36 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Build Engine (Windows)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "scripts/build_engine_win.sh"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build Editor (Windows)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "scripts/build_editor_win.sh"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Setup Windows Dependencies",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "scripts/setup_win_deps.sh"
+            ],
+            "group": "none",
+            "problemMatcher": []
         }
     ]
 }

@@ -14,7 +14,7 @@ void linesInit() {
     memset(lines, 0, sizeof lines);
     memset(lineLocation, 0, sizeof lineLocation);
     if (!sharedFont) {
-        sharedFont = TTF_OpenFont("assets/fonts/default.ttf", FONT_SIZE);
+        sharedFont = TTF_OpenFont(assetPath("assets/fonts/default.ttf"), FONT_SIZE);
     }
 }
 
