@@ -40,10 +40,18 @@ void createNewMap(char *file) {
     // Store file name
     map.file = file;
 
-    // First line - set size data
+    // First line - sprite sheet info: "sprite.png tileW tileH"
+    memset(map.spriteName, 0, sizeof(map.spriteName));
+    map.spriteTileW = 0;
+    map.spriteTileH = 0;
+    sscanf(line, "%255s %hu %hu", map.spriteName, &map.spriteTileW, &map.spriteTileH);
+
+    // Second line - set size data
+    line = strtok_r(NULL, "\n", &lineSave);
+    if (!line) return;
     sscanf(line, "%hhu %hhu", &map.size.x, &map.size.y); // hhu means uint8
 
-    // Second line - set start coordinates
+    // Third line - set start coordinates
     line = strtok_r(NULL, "\n", &lineSave);
     if (!line) return;
     sscanf(line, "%hhu %hhu", &map.start.x, &map.start.y);
@@ -95,25 +103,25 @@ int *getMovementOptions () {
 
     if (px != map.size.x - 1) { // Not on right edge
         int right = map.data[py][px + 1];
-        if (right == 1) {
+        if (right > 0) {
             options[0] = 1;
         }
     }
     if (px != 0) { // Not on left edge
         int left = map.data[py][px - 1];
-        if (left == 1) {
+        if (left > 0) {
             options[1] = 1;
         }
     }
     if (py != 0) { // Not on top edge
         int top = map.data[py - 1][px];
-        if (top == 1) {
+        if (top > 0) {
             options[2] = 1;
         }
     }
     if (py != map.size.y - 1) { // Not on bottom edge
         int bot = map.data[py + 1][px];
-        if (bot == 1) {
+        if (bot > 0) {
             options[3] = 1;
         }
     }

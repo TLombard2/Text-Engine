@@ -26,11 +26,16 @@ typedef struct player_t {
     coord_t coord;
 } player_t;
 
+#define MAX_SPRITE_NAME 256
+
 typedef struct map_t {
     char *file;
     uint8_t data[64][64];
     coord_t size;
     coord_t start;
+    char spriteName[MAX_SPRITE_NAME];
+    uint16_t spriteTileW;
+    uint16_t spriteTileH;
 } map_t;
 
 typedef struct background_t {
